@@ -12,9 +12,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+        theme: ThemeData(
+            colorScheme: ColorScheme(
+                primary: Colors.orange,
+                primaryContainer: Colors.orange[700],
+                secondary: Colors.green,
+                secondaryContainer: Colors.green[700],
+                brightness: Brightness.light,
+                onPrimary: Colors.white,
+                onSecondary: Colors.black,
+                onSurface: Colors.black,
+                onError: Colors.white,
+                error: Colors.red,
+                background: Colors.grey[200]!,
+                surface: Colors.white, onBackground: Colors.black
+            )
+        ),
         title: "My App",
-        home: HomePage()
+        home: const HomePage()
     );
   }
 }
@@ -32,6 +48,7 @@ class FirstScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+        backgroundColor: Colors.green,
         body: Text("First Screen")
     );
   }
@@ -44,6 +61,7 @@ class SecondScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // TODO: implement build
     return const Scaffold(
+        backgroundColor: Colors.blueGrey,
         body: Text("Second Screen")
     );
   }
@@ -185,7 +203,24 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         body: Center(
           child: Stack(
               children: [
-                if(!_isSearchExpanded) screens[_selectedIndex],
+                AnimatedSwitcher(
+                  duration: Duration(milliseconds: 1000),
+                  child: !_isSearchExpanded? screens[_selectedIndex]: null,
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    // Implement your custom transition effect here
+                    const begin = Offset(1.0, 1.0); // Bottom-right corner
+                    const end = Offset.zero;
+                    const curve = Curves.easeInOut;
+
+                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                    var offsetAnimation = animation.drive(tween);
+
+                    return SlideTransition(
+                      position: offsetAnimation,
+                      child: child,
+                    );
+                  },
+                ),
                 RepaintBoundary(
                     child: AnimatedOpacity(duration: const Duration(milliseconds: 300),
                       opacity: _isSearchExpanded? 1: 0,
@@ -202,6 +237,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 )
               ]
           ),
+
         ),
         drawer: ClipRRect(
           borderRadius: const BorderRadius.only(
@@ -214,13 +250,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             // space to fit everything.
             child: ListView(
               // Important: Remove any padding from the ListView.
-              padding: EdgeInsets.zero,
               children: [
                 Padding(
                     padding: const EdgeInsets.fromLTRB(64, 64, 64, 32),
                     child: Image.asset("assets/images/cloudy_sun.png", fit: BoxFit.fitHeight)
                 ),
                 ListTile(
+                  contentPadding: const EdgeInsets.only(left: 40),
+                  minLeadingWidth: 10,
+                  leading: const Icon(Icons.home),
                   title: const Text('First'),
                   selected: _selectedIndex == 0,
                   onTap: () {
@@ -231,6 +269,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   },
                 ),
                 ListTile(
+                  contentPadding: const EdgeInsets.only(left: 40),
+                  minLeadingWidth: 10,
+                  leading: const Icon(Icons.account_circle),
                   title: const Text('Second'),
                   selected: _selectedIndex == 1,
                   onTap: () {
