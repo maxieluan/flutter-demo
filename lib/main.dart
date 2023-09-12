@@ -26,7 +26,8 @@ class MyApp extends StatelessWidget {
                 onError: Colors.white,
                 error: Colors.red,
                 background: Colors.grey[200]!,
-                surface: Colors.white, onBackground: Colors.black
+                surface: Colors.white,
+                onBackground: Colors.black
             )
         ),
         title: "My App",
@@ -67,13 +68,29 @@ class SecondScreen extends StatelessWidget {
   }
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class OverlayScreen extends StatelessWidget {
+  const OverlayScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return const Scaffold(
+        backgroundColor: Colors.amber,
+        body: Text("Overlay Screen")
+    );
+  }
+}
+
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchExpanded = false;
+  bool _showOverlayScreen = false;
   late OverlayEntry detectorOverlay;
   late AnimationController controller;
+  late AnimationController screenTransition;
   late Animation<double> enlargeAnimation;
+  late Animation<double> screenTransitonAnimation;
 
   static List<Widget> screens = <Widget>[];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -83,6 +100,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     super.initState();
     controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     enlargeAnimation = Tween<double>(begin: 0, end: 100).animate(controller);
+    screenTransition = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    screenTransitonAnimation = Tween<double>(begin: 0, end: 100).animate(screenTransition);
   }
 
   @override
@@ -204,7 +223,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           child: Stack(
               children: [
                 AnimatedSwitcher(
-                  duration: Duration(milliseconds: 1000),
+                  duration: const Duration(milliseconds: 1000),
                   child: !_isSearchExpanded? screens[_selectedIndex]: null,
                   transitionBuilder: (Widget child, Animation<double> animation) {
                     // Implement your custom transition effect here
@@ -221,6 +240,27 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     );
                   },
                 ),
+                if (_showOverlayScreen)
+                  AnimatedBuilder(
+                      animation: screenTransition,
+                      builder: (context, child) {
+                        print(screenTransition.value);
+                        final animationValue = screenTransition.value;
+                        final translateY = (1.0 - animationValue) * MediaQuery.of(context).size.height;
+
+                        return Positioned(
+                          bottom: translateY,
+                          right: translateY,
+                          left: translateY,
+                          top: translateY,
+                          child: Container(
+                            color: Colors.white, // Background color of the overlay
+                            child: const OverlayScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
                 RepaintBoundary(
                     child: AnimatedOpacity(duration: const Duration(milliseconds: 300),
                       opacity: _isSearchExpanded? 1: 0,
@@ -254,6 +294,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 Padding(
                     padding: const EdgeInsets.fromLTRB(64, 64, 64, 32),
                     child: Image.asset("assets/images/cloudy_sun.png", fit: BoxFit.fitHeight)
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.only(left: 40),
+                  minLeadingWidth: 10,
+                  leading: const Icon(Icons.accessible),
+                  title: const Text("Overlay"),
+                  onTap: () {
+                    setState(() {
+                      Navigator.pop(context);
+                      _showOverlayScreen = !_showOverlayScreen;
+                      if (_showOverlayScreen) {
+                        screenTransition.forward();
+                      } else {
+                        screenTransition.reverse();
+                      }
+                    });
+                  },
                 ),
                 ListTile(
                   contentPadding: const EdgeInsets.only(left: 40),
