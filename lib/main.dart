@@ -100,7 +100,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     enlargeAnimation = Tween<double>(begin: 0, end: 100).animate(controller);
-    screenTransition = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    screenTransition = AnimationController(vsync: this, duration: const Duration(milliseconds: 500))..addStatusListener((status) {
+      if (status == AnimationStatus.dismissed) {
+        setState(() {
+          _showOverlayScreen = false;
+        });
+      }
+    });
     screenTransitonAnimation = Tween<double>(begin: 0, end: 1).animate(screenTransition);
   }
 
@@ -165,8 +171,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     });
                                   } else {
                                     setState(() {
-                                      _isSearchExpanded = false;
                                       controller.reverse();
+                                      _isSearchExpanded = false;
                                     });
                                   }
                                 },
@@ -333,10 +339,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 right: 0,
                 child: GestureDetector(
                   onDoubleTap: () => {
-                    setState(() {
-                      _showOverlayScreen = !_showOverlayScreen;
-                      screenTransition.reverse();
-                    })
+                    screenTransition.reverse()
                   },
                   child: ClipOval(
                     clipper: ArchClipper(animationValue),
