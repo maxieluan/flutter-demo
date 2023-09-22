@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -43,7 +46,8 @@ class HomePage extends StatefulWidget{
 }
 
 class FirstScreen extends StatelessWidget {
-  const FirstScreen({super.key});
+  FirstScreen({super.key});
+  final GlobalKey<CustomMeterGraphState> meterGraphKey = GlobalKey<CustomMeterGraphState>();
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +55,9 @@ class FirstScreen extends StatelessWidget {
         backgroundColor: Colors.green,
         body: ListView(
           children: [
-            _buildListItem(Text("Item 1"), 1),
-            _buildListItem(Text("Item 2"), 2),
-            _buildListItem(Text("Item 2"), 3),
+            _buildListItem(const Text("Item 1"), 1),
+            _buildListItem(const Text("Item 2"), 2),
+            _buildListItem(const Text("Item 2"), 3),
             _buildListItem(
                Row(
                 children: [
@@ -68,25 +72,45 @@ class FirstScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold
                           )
                         ),
+                        SizedBox(
+                          height: 14,
+                        ),
                         Text(
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
-                              'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                          'Lorem ipsum dolor sit amet.'
+                              'Sed do eiusmod tempor incididunt ut.',
                           style: TextStyle(fontSize: 16)
                         )
                       ],
                     ),
                   ),
                   SizedBox(
-                    width: 192,
-                    height: 192,
+                    width: 140,
+                    height: 140,
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.fromLTRB(10, 8, 0, 8),
                       child: Image.asset("assets/images/brain.png", fit: BoxFit.fill)
                     ),
                   )
                 ],
               )
-            , 4)
+            , 4),
+            Card(
+              elevation: 1, // You can adjust the elevation as needed
+              margin: const EdgeInsets.all(8), // Margin around each card
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0), // Adjust the corner radius as needed
+              ),
+              child: InkWell(
+                customBorder: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0)
+                ),
+                onTap: () {
+                  meterGraphKey.currentState?.resetAnimation();
+                },
+                child:  CustomMeterGraph(key: meterGraphKey, value: 0.7)
+
+              ),
+            )
           ],
         )
     );
@@ -116,7 +140,9 @@ class FirstScreen extends StatelessWidget {
 
   void _handleItemClick(int itemText) {
     // Handle the click action for the item here
-    print('Clicked on: $itemText');
+    if (kDebugMode) {
+      print('Clicked on: $itemText');
+    }
   }
 }
 
@@ -202,7 +228,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    screens.add(const FirstScreen());
+    screens.add(FirstScreen());
     screens.add(const SecondScreen());
 
     return Stack(
@@ -457,6 +483,136 @@ class ArchClipper extends CustomClipper<Rect> {
 
   @override
   bool shouldReclip(covariant CustomClipper<Rect> oldClipper) {
+    return true;
+  }
+}
+
+class CustomMeterGraph extends StatefulWidget {
+  final double value;
+
+  const CustomMeterGraph({super.key, required this.value});
+
+  @override
+  State<CustomMeterGraph>  createState() => CustomMeterGraphState();
+}
+
+class CustomMeterGraphState  extends State<CustomMeterGraph> with SingleTickerProviderStateMixin {
+
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  late double value;
+
+  void resetAnimation() {
+    setState(() {
+      _controller.reset();
+      _controller.forward();
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    value = widget.value;
+
+    _controller = AnimationController(vsync: this,
+      duration: const Duration(milliseconds: 500)
+    );
+
+    _animation = Tween<double>(
+      begin: 0,
+      end: value,
+    ).animate(_controller);
+
+    _controller.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: SizedBox(
+                  width: 120, // slightly wider for the width of the stroke
+                  height: 120,
+                  child: ClipRect(
+                    clipper: UpperHalfClipper(),
+                    child: CustomPaint(
+                      painter: MeterPainter(_animation.value, Colors.green),
+                    ),
+                  )
+                ),
+              );
+            }
+        ),
+        const SizedBox(width: 40),
+        AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: SizedBox(
+                  width: 120, // slightly wider for the width of the stroke
+                  height: 120,
+                  child: ClipRect(
+                    clipper: UpperHalfClipper(),
+                    child: CustomPaint(
+                      painter: MeterPainter(_animation.value, Colors.blue),
+                    ),
+                  )
+                ),
+              );
+            }
+        )
+      ],
+    );
+  }
+}
+
+class UpperHalfClipper extends CustomClipper<Rect> {
+  @override
+  Rect getClip(Size size) {
+    return Rect.fromLTRB(0, 0, size.width, size.height / 2);
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Rect> oldClipper) {
+    return false;
+  }
+}
+
+class MeterPainter extends CustomPainter {
+  double value;
+  Color color;
+
+  MeterPainter(this.value, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double centerX = size.width/2;
+    double centerY = size.height/2;
+
+    double strokeWidth = 12.0;
+    double radius = min(centerX, centerY) - strokeWidth;
+    double startAngle = -pi;
+    double sweepAngle = pi * value * 2;
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    
+      canvas.drawArc(Rect.fromCircle(center: Offset(centerX, centerY), radius: radius), startAngle, sweepAngle, false, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
 }
