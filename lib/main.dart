@@ -107,7 +107,7 @@ class FirstScreen extends StatelessWidget {
                 onTap: () {
                   meterGraphKey.currentState?.resetAnimation();
                 },
-                child:  CustomMeterGraph(key: meterGraphKey, value: 0.7)
+                child:  CustomMeterGraph(key: meterGraphKey, value: 1)
 
               ),
             )
@@ -600,8 +600,8 @@ class MeterPainter extends CustomPainter {
 
     double strokeWidth = 12.0;
     double radius = min(centerX, centerY) - strokeWidth;
-    double startAngle = -pi * 1.05;
-    double sweepAngle = pi * value * 1.05;
+    double startAngle = -pi * 1.1;
+    double sweepAngle = pi * value * 1.2;
 
     final paint = Paint()
       ..color = color
